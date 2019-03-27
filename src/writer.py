@@ -1,8 +1,6 @@
 import json
-import _pickle as pickle
 import threading
 import queue
-import datetime
 
 
 class Event():
@@ -49,9 +47,8 @@ class Event():
 class FileWriter():
     def __init__(self, fn:str):
         self._fn = fn
-        self._fp = open(fn, 'w', encoding='utf-8')
         self._q = queue.Queue(maxsize=100)
-        self._thread = FileWriterThreading(self._fp, self._q)
+        self._thread = FileWriterThread(self._fn, self._q)
         self._thread.daemon = True
         self._thread.start()
 
@@ -62,23 +59,24 @@ class FileWriter():
         self._q.put(s, timeout=60)
 
     def close(self):
-        try:
-            self._q.put(None, timeout=60)
-            self._thread.join(timeout=60)
-        finally:
-            self._fp.close()
+        self._q.put(None, timeout=60)
+        self._thread.join(timeout=60)
 
 
-class FileWriterThreading(threading.Thread):
-    def __init__(self, fp, q:queue.Queue):
-        super(FileWriterThreading, self).__init__()
-        self._fp = fp
+class FileWriterThread(threading.Thread):
+    def __init__(self, fn, q:queue.Queue):
+        super(FileWriterThread, self).__init__()
+        self._fn = fn
         self._q = q
+        self._fp = None
 
     def run(self):
-        while 1:
-            msg = self._q.get()
-            if msg is None:
-                break
-            self._fp.write(msg+'\n')
-
+        self._fp = open(self._fn, 'w', encoding='utf-8')
+        try:
+            while 1:
+                msg = self._q.get()
+                if msg is None:
+                    break
+                self._fp.write(msg+'\n')
+        finally:
+            self._fp.close()

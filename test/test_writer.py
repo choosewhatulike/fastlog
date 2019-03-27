@@ -1,6 +1,7 @@
 from src.writer import FileWriter, Event
-from src.logger import LogWriter
+from src.logger import Logger
 import os
+import json
 
 events = [
     Event(step=1, time=None, name='loss', val=10.2),
@@ -42,10 +43,7 @@ class TestLogger():
     meta_fn = fn + '/meta.log'
     event_fn = fn + '/event.log'
     def test1(self):
-        w = LogWriter(self.fn)
-        w.add_commit_id('abcd12345')
-        w.add_rng_seed(8888)
-        w.add_start_time(0)
+        w = Logger(self.fn)
 
         cfg = {'lr':3e-4,
                'hidden':400,
@@ -53,35 +51,45 @@ class TestLogger():
                'lr_decay':0.95,}
         w.add_config(cfg)
 
-        w.add_scalar('loss', 1, step=1, time=0)
-        w.add_scalar('loss', 2.2, step=2, time=10)
-        w.add_scalar('loss', 0.3, step=3, time=60)
-        w.add_scalar('loss', 10.3, step=4, time=120)
-        w.add_scalar('loss', 2.3, step=5, time=3600)
-        w.add_scalar('loss', 4.3, step=6, time=1e5)
+        w.add_scalar('c1', 1, step=1)
+        w.add_scalar('v2', 2.2, step=2)
+        w.add_scalar('v3', 0.3, step=3)
+        w.add_loss('corss_loss', 10.3, step=4)
+        w.add_metric('f1', 2.3, step=5)
+        w.add_metric('acc', 4.3, step=6)
         w.close()
 
         with open(self.event_fn, 'r') as f:
             text = ''.join(f.readlines())
-        true_text = """{"name": "loss", "val": 1, "time": 0, "step": 1}
-{"name": "loss", "val": 2.2, "time": 10, "step": 2}
-{"name": "loss", "val": 0.3, "time": 60, "step": 3}
-{"name": "loss", "val": 10.3, "time": 120, "step": 4}
-{"name": "loss", "val": 2.3, "time": 3600, "step": 5}
-{"name": "loss", "val": 4.3, "time": 100000, "step": 6}
+        true_text = """{"name": "c1", "val": 1, "time": 0, "step": 1}
+{"name": "v2", "val": 2.2, "time": 0, "step": 2}
+{"name": "v3", "val": 0.3, "time": 0, "step": 3}
+{"name": "loss", "val": {"corss_loss": 10.3}, "time": 0, "step": 4}
+{"name": "metric", "val": {"f1": 2.3}, "time": 0, "step": 5}
+{"name": "metric", "val": {"acc": 4.3}, "time": 0, "step": 6}
 """
         assert text == true_text
+        meta_log = {}
         with open(self.meta_fn, 'r') as f:
-            text = ''.join(f.readlines())
-        true_text = """{"name": "$commit-id$", "val": "abcd12345"}
-{"name": "$rng-seed$", "val": 8888}
-{"name": "$start-time$", "val": "1970-01-01 08:00:00"}
-{"name": "lr", "val": 0.0003}
-{"name": "hidden", "val": 400}
-{"name": "weight_decay", "val": 1e-05}
-{"name": "lr_decay", "val": 0.95}
-"""
-        assert text == true_text
+            for l in f:
+                log = json.loads(l)
+                assert 'name' in log
+                assert 'val' in log
+                meta_log[log['name']] = log['val']
+        meta_true = {
+            '$commit-id$': None,
+            '$rng-seed$': None,
+            '$start-time$': None,
+            'lr': 0.0003,
+            'hidden': 400,
+            'weight_decay': 1e-05,
+            'lr_decay': 0.95,
+        }
+        assert len(meta_log) == len(meta_true)
+        for n, v in meta_true.items():
+            assert n in meta_log
+            if v is not None:
+                assert v == meta_log[n]
 
     def teardown(self):
         os.remove(self.event_fn)
