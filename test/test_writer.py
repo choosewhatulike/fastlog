@@ -1,6 +1,6 @@
 from fastlog.writer import FileWriter, Event
-from fastlog.logger import Logger
-from fastlog.reader import LogReader
+from fastlog import Logger
+from fastlog import LogReader
 import os
 import json
 
@@ -95,10 +95,13 @@ class TestLogger():
 
     def test2(self):
         self.write1()
-        r = LogReader(log_dir=self.fn)
+        r = LogReader(self.fn)
         meta = r.read_metas()
         hyper = r.read_hypers()
         events = r.read_events()
+        print(meta)
+        print(hyper)
+        print(events[0:2])
         assert 'commit-id' in meta \
                 and 'rng-seed' in meta \
                 and 'start-time' in meta

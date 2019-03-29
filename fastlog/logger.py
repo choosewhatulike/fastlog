@@ -25,13 +25,13 @@ def set_rng_seeds(seed=None):
     return seed
 
 class Logger():
-    def __init__(self, root_dir='.'):
+    def __init__(self, log_dir='.'):
         self._start_time = None
         self._commit_id = None
         self._rng_seed = None
-        self._root_dir = root_dir
+        self._root_dir = log_dir
         self._step_dict = {}
-        os.makedirs(root_dir, exist_ok=True)
+        os.makedirs(log_dir, exist_ok=True)
         self._event_writer = FileWriter(fn=path.join(self._root_dir, 'event.log'))
         self._meta_writer = FileWriter(fn=path.join(self._root_dir, 'meta.log'))
         self._log_all_meta()
