@@ -1,5 +1,6 @@
-from src.writer import FileWriter, Event
-from src.logger import Logger
+from fastlog.writer import FileWriter, Event
+from fastlog.logger import Logger
+from fastlog.reader import LogReader
 import os
 import json
 
@@ -42,13 +43,13 @@ class TestLogger():
     fn = 'test_logger'
     meta_fn = fn + '/meta.log'
     event_fn = fn + '/event.log'
-    def test1(self):
+    def write1(self):
         w = Logger(self.fn)
 
-        cfg = {'lr':3e-4,
-               'hidden':400,
+        cfg = {'lr': 3e-4,
+               'hidden': 400,
                'weight_decay': 1e-5,
-               'lr_decay':0.95,}
+               'lr_decay': 0.95, }
         w.add_config(cfg)
 
         w.add_scalar('c1', 1, step=1)
@@ -59,6 +60,8 @@ class TestLogger():
         w.add_metric('acc', 4.3, step=6)
         w.close()
 
+    def test1(self):
+        self.write1()
         with open(self.event_fn, 'r') as f:
             text = ''.join(f.readlines())
         true_text = """{"name": "c1", "val": 1, "time": 0, "step": 1}
@@ -90,6 +93,22 @@ class TestLogger():
             assert n in meta_log
             if v is not None:
                 assert v == meta_log[n]
+
+    def test2(self):
+        self.write1()
+        r = LogReader(log_dir=self.fn)
+        meta = r.read_metas()
+        hyper = r.read_hypers()
+        events = r.read_events()
+        assert 'commit-id' in meta \
+                and 'rng-seed' in meta \
+                and 'start-time' in meta
+        cfg = {'lr': 3e-4,
+               'hidden': 400,
+               'weight_decay': 1e-5,
+               'lr_decay': 0.95, }
+        assert cfg == hyper
+        assert len(events) == 6
 
     def teardown(self):
         os.remove(self.event_fn)

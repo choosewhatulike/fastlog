@@ -1,4 +1,4 @@
-from src.writer import FileWriter, Event
+from fastlog.writer import FileWriter, Event
 import os
 from os import path
 import datetime
