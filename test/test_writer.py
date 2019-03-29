@@ -36,7 +36,6 @@ class TestWriter():
 
     def teardown(self):
         os.remove(self.fn)
-        pass
 
 
 class TestLogger():
@@ -114,4 +113,3 @@ class TestLogger():
         os.remove(self.event_fn)
         os.remove(self.meta_fn)
         os.rmdir(self.fn)
-        pass

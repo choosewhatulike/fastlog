@@ -4,6 +4,12 @@ from os import path
 import datetime
 import time as T
 import random, numpy, torch
+try:
+    import fastgit
+except ImportError:
+    import warnings
+    warnings.warn('fastgit is missing, cannot log code', ImportWarning)
+    fastgit = None
 
 
 def set_rng_seeds(seed=None):
@@ -71,7 +77,10 @@ class Logger():
         return step
 
     def _log_commit_id(self):
-        id = None # TODO use fastgit to get commit-id
+        id = None
+        if fastgit:
+            fastgit.commit()
+            id = fastgit.get_commit_id()
         e = Event(name='$commit-id$', val=id)
         self._meta_writer.add_event(e)
 
