@@ -1,6 +1,9 @@
 # fastlog
 轻量级的机器学习实验记录工具。内部开发中
 
+## Note
+现已并入 [fitlog](https://github.com/choosewhatulike/fitlog)
+
 ## 使用方法
 
 使用`Logger`记录实验信息
